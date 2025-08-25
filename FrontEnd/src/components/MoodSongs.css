@@ -1,0 +1,76 @@
+.mood-songs {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 20px 25px;
+    width: 40%;
+    height: 60vh;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+    color: #fff;
+    margin-left: 42rem;
+    margin-top: -35rem;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.mood-songs h2 {
+    text-align: center;
+    font-size: 1.6rem;
+    margin-bottom: 15px;
+}
+
+.mood-songs>div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.07);
+    padding: 12px 15px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    transition: all 0.3s ease;
+}
+
+.mood-songs>div:hover {
+    background: rgba(178, 108, 255, 0.15);
+    transform: translateY(-2px);
+}
+
+.title{
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.title p {
+    margin: 2px 0 0;
+    align-self: flex-start;
+    font-size: 0.9rem;
+    color: #aaa;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    text-transform: capitalize; 
+}
+
+.title audio {
+    outline: none;
+    border: none;
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+    margin-left: 1.5rem;
+    width: 25rem;    
+}
+.song-card {
+    background: linear-gradient(135deg, #3e1d54, #2a1b3d);
+    padding: 15px;
+    margin: 12px 0;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s;
+}
+
+.song-card:hover {
+    transform: translateY(-3px);
+}
