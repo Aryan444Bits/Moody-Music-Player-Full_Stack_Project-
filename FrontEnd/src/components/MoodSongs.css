@@ -1,0 +1,105 @@
+.mood-songs {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 20px 25px;
+    flex: 1;
+    min-width: 350px;
+    max-width: 500px;
+    height: 70vh;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+    color: #fff;
+    margin: 1rem 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    /* backdrop-filter: blur(10px); */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mood-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.mood-tag {
+    background: #b26cff;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.fetching-loader {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(178, 108, 255, 0.3);
+    border-top: 3px solid #b26cff;
+    border-radius: 50%;
+    margin-bottom: 1rem;
+}
+
+.song-item {
+    background: rgba(255, 255, 255, 0.07);
+    padding: 12px 15px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    transition: all 0.3s ease;
+}
+
+.song-item:hover {
+    background: rgba(178, 108, 255, 0.15);
+}
+
+.title {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+audio {
+    width: 100%;
+    height: 32px;
+    filter: brightness(0.8);
+}
+
+.placeholder {
+    text-align: center;
+    color: #888;
+    margin-top: 3rem;
+} 
+
+
+.title audio {
+    outline: none;
+    border: none;
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+    margin-left: 1.5rem;
+    width: 25rem;    
+}
+.song-card {
+    background: linear-gradient(135deg, #3e1d54, #2a1b3d);
+    padding: 15px;
+    margin: 12px 0;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s;
+}
+
+.song-card:hover {
+    transform: translateY(-3px);
+}
