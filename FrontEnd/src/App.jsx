@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from 'react
 import Home from './components/Home';
 import UploadSong from './components/UploadSong';
 import Suggestion from './components/Suggestion';
+import ListeningHistory from './components/ListeningHistory';
 import Login from './components/Login';
 import Register from './components/Register';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -25,6 +26,7 @@ const Navigation = () => {
       <Link to="/upload">Upload Song</Link>
       {user ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginLeft: '1rem' }}>
+          <Link to="/history">Listening History</Link>
           <span style={{ fontSize: '0.9rem', color: '#b26cff', fontWeight: 'bold' }}>
             👤 {user.name}
           </span>
@@ -70,6 +72,14 @@ function AppContent() {
           element={
             <ProtectedRoute>
               <UploadSong />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/history"
+          element={
+            <ProtectedRoute>
+              <ListeningHistory />
             </ProtectedRoute>
           }
         />
