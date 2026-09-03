@@ -1,12 +1,14 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useContext } from 'react';
 import * as faceapi from 'face-api.js';
-import "./facialExpression.css"
+import "./facialExpression.css";
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
+import { AuthContext } from '../context/AuthContext';
 
-export default function FacialExpression({setSongs, setLoading, setMood}) {
+export default function FacialExpression({ setSongs, setLoading, setMood }) {
     const videoRef = useRef();
     const [status, setStatus] = useState('ready'); // ready, detecting, fetching, error
+    const { token } = useContext(AuthContext);
 
     const loadModels = async () => {
         const MODEL_URL = '/models';
@@ -54,17 +56,27 @@ export default function FacialExpression({setSongs, setLoading, setMood}) {
         setMood(mostProbableExpression);
         setStatus('fetching');
 
-        axios.get(`http://localhost:3000/songs?mood=${mostProbableExpression}`)
+        const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+
+        axios.get(`http://localhost:3000/api/recommendations?mood=${mostProbableExpression}`, config)
         .then(response => {
-            console.log(response.data);
-            setSongs(response.data.songs);
+            console.log("Recommendation API Response:", response.data);
+            setSongs(response.data.songs || []);
             setLoading(false);
             setStatus('ready');
         })
         .catch(err => {
-            console.error(err);
-            setLoading(false);
-            setStatus('ready');
+            console.error("Recommendation fetch error, falling back:", err);
+            // Fallback to standard songs endpoint if needed
+            axios.get(`http://localhost:3000/songs?mood=${mostProbableExpression}`, config)
+            .then(res => {
+                setSongs(res.data.songs || []);
+            })
+            .catch(e => console.error(e))
+            .finally(() => {
+                setLoading(false);
+                setStatus('ready');
+            });
         });
     }
 

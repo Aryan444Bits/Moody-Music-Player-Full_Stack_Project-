@@ -189,7 +189,7 @@ const MoodSongs = ({ Songs, loading, mood }) => {
   return (
     <div className="mood-songs">
       <div className="mood-header">
-        <h2>Recommended Songs</h2>
+        <h2>Recommended for You</h2>
         {mood && <div className="mood-tag">Mood: {mood}</div>}
       </div>
 
@@ -222,6 +222,8 @@ const MoodSongs = ({ Songs, loading, mood }) => {
                   const isLiked = likedSongIds.has(songIdStr);
                   const toastMsg = actionFeedback[song._id];
                   const audioSrc = song.audioUrl || song.audio;
+                  const score = song.recommendationScore !== undefined ? song.recommendationScore : null;
+                  const reasons = Array.isArray(song.reasons) ? song.reasons : [];
 
                   return (
                     <motion.div
@@ -233,11 +235,21 @@ const MoodSongs = ({ Songs, loading, mood }) => {
                     >
                       <div className="title">
                         <div className="song-info-header">
-                          <div>
-                            <p style={{ fontWeight: 'bold', color: '#ffffff', marginBottom: '0.2rem' }}>
-                              {song.title || song.artist || 'Untitled Song'}
-                            </p>
-                            <p style={{ fontSize: '0.85rem', color: '#b0b0b0', marginBottom: '0.2rem' }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                              <p style={{ fontWeight: 'bold', color: '#ffffff', margin: 0 }}>
+                                {song.title || song.artist || 'Untitled Song'}
+                              </p>
+
+                              {/* Recommendation Score Badge */}
+                              {score !== null && (
+                                <span className="score-badge" title="Explainable Recommendation Match Score">
+                                  ✨ {score}% Match
+                                </span>
+                              )}
+                            </div>
+
+                            <p style={{ fontSize: '0.85rem', color: '#b0b0b0', margin: '0.3rem 0 0.2rem 0' }}>
                               👤 {song.title ? song.artist : (song.artist || 'Unknown Artist')} {song.mood ? `• 🎭 ${song.mood}` : ''}
                             </p>
 
@@ -256,6 +268,14 @@ const MoodSongs = ({ Songs, loading, mood }) => {
                                 <span key={i} className="metadata-badge tag-badge">#{tag}</span>
                               ))}
                             </div>
+
+                            {/* Recommendation Reason List */}
+                            {reasons.length > 0 && (
+                              <div className="recommendation-reasons">
+                                <span className="reason-icon">💡</span>
+                                <span className="reason-text">{reasons.join(' • ')}</span>
+                              </div>
+                            )}
                           </div>
                           
                           {/* Like Button */}
@@ -324,7 +344,7 @@ const MoodSongs = ({ Songs, loading, mood }) => {
                   );
                 })
               ) : (
-                <p className="placeholder">Scan your face to see song recommendations</p>
+                <p className="placeholder">Scan your face to see personalized song recommendations</p>
               )}
             </motion.div>
           )}
