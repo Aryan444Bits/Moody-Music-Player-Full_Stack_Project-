@@ -71,6 +71,46 @@
     align-items: flex-start;
 }
 
+.song-metadata-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.metadata-badge {
+    font-size: 0.72rem;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #e0d8f0;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    font-weight: 500;
+}
+
+.genre-badge {
+    background: rgba(178, 108, 255, 0.2);
+    border-color: rgba(178, 108, 255, 0.4);
+    color: #d8b4ff;
+}
+
+.lang-badge {
+    background: rgba(0, 180, 216, 0.18);
+    border-color: rgba(0, 180, 216, 0.4);
+    color: #90e0ef;
+}
+
+.energy-badge {
+    background: rgba(255, 183, 3, 0.18);
+    border-color: rgba(255, 183, 3, 0.4);
+    color: #ffb703;
+}
+
+.tag-badge {
+    background: rgba(255, 255, 255, 0.05);
+    color: #b0b0b0;
+}
+
 .like-btn {
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);

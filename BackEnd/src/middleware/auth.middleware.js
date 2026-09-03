@@ -41,6 +41,26 @@ const protect = async (req, res, next) => {
   }
 };
 
+// Optional Protect - Attach user if token present, otherwise continue
+const optionalProtect = async (req, res, next) => {
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith('Bearer')
+  ) {
+    try {
+      const token = req.headers.authorization.split(' ')[1];
+      const decoded = jwt.verify(
+        token,
+        process.env.JWT_SECRET || 'fallback_secret'
+      );
+      req.user = await User.findById(decoded.id).select('-password');
+    } catch (error) {
+      // Ignore token failure for optional authentication
+    }
+  }
+  next();
+};
+
 // Grant access to specific roles (e.g. admin)
 const authorize = (...roles) => {
   return (req, res, next) => {
@@ -55,5 +75,6 @@ const authorize = (...roles) => {
 
 module.exports = {
   protect,
+  optionalProtect,
   authorize
 };

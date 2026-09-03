@@ -66,7 +66,6 @@ const MoodSongs = ({ Songs, loading, mood }) => {
 
     try {
       if (isLiked) {
-        // Optimistic UI update
         setLikedSongIds((prev) => {
           const next = new Set(prev);
           next.delete(songIdStr);
@@ -75,14 +74,12 @@ const MoodSongs = ({ Songs, loading, mood }) => {
         await axios.post(`${API_BASE_URL}/api/feedback/unlike`, { songId: song._id }, config);
         showFeedbackToast(song._id, 'Unliked track');
       } else {
-        // Optimistic UI update
         setLikedSongIds((prev) => new Set(prev).add(songIdStr));
         await axios.post(`${API_BASE_URL}/api/feedback/like`, { songId: song._id }, config);
         showFeedbackToast(song._id, 'Liked track ❤️');
       }
     } catch (err) {
       console.error('Error updating like status:', err);
-      // Revert state on error
       setLikedSongIds((prev) => {
         const next = new Set(prev);
         if (isLiked) next.add(songIdStr);
@@ -100,7 +97,6 @@ const MoodSongs = ({ Songs, loading, mood }) => {
       await axios.post(`${API_BASE_URL}/api/feedback/skip`, { songId: song._id }, config);
       showFeedbackToast(song._id, 'Recorded Skip ⏭️');
 
-      // Pause playback if currently playing
       const audioEl = audioRefs.current[song._id];
       if (audioEl && !audioEl.paused) {
         audioEl.pause();
@@ -118,7 +114,6 @@ const MoodSongs = ({ Songs, loading, mood }) => {
       await axios.post(`${API_BASE_URL}/api/feedback/replay`, { songId: song._id }, config);
       showFeedbackToast(song._id, 'Recorded Replay 🔄');
 
-      // Restart and play audio
       const audioEl = audioRefs.current[song._id];
       if (audioEl) {
         audioEl.currentTime = 0;
@@ -226,6 +221,7 @@ const MoodSongs = ({ Songs, loading, mood }) => {
                   const songIdStr = song._id ? song._id.toString() : '';
                   const isLiked = likedSongIds.has(songIdStr);
                   const toastMsg = actionFeedback[song._id];
+                  const audioSrc = song.audioUrl || song.audio;
 
                   return (
                     <motion.div
@@ -241,9 +237,25 @@ const MoodSongs = ({ Songs, loading, mood }) => {
                             <p style={{ fontWeight: 'bold', color: '#ffffff', marginBottom: '0.2rem' }}>
                               {song.title || song.artist || 'Untitled Song'}
                             </p>
-                            <p style={{ fontSize: '0.85rem', color: '#b0b0b0', marginBottom: '0.5rem' }}>
+                            <p style={{ fontSize: '0.85rem', color: '#b0b0b0', marginBottom: '0.2rem' }}>
                               👤 {song.title ? song.artist : (song.artist || 'Unknown Artist')} {song.mood ? `• 🎭 ${song.mood}` : ''}
                             </p>
+
+                            {/* Metadata Badges (Genre, Language, Energy, Tags) */}
+                            <div className="song-metadata-badges">
+                              {song.genre && song.genre !== 'Unknown' && (
+                                <span className="metadata-badge genre-badge">🎵 {song.genre}</span>
+                              )}
+                              {song.language && song.language !== 'Unknown' && (
+                                <span className="metadata-badge lang-badge">🌐 {song.language}</span>
+                              )}
+                              {song.energy !== undefined && song.energy !== null && (
+                                <span className="metadata-badge energy-badge">⚡ {song.energy}% Energy</span>
+                              )}
+                              {Array.isArray(song.tags) && song.tags.length > 0 && song.tags.map((tag, i) => (
+                                <span key={i} className="metadata-badge tag-badge">#{tag}</span>
+                              ))}
+                            </div>
                           </div>
                           
                           {/* Like Button */}
@@ -262,7 +274,7 @@ const MoodSongs = ({ Songs, loading, mood }) => {
                         <div className="player-controls-wrapper">
                           <audio
                             ref={(el) => (audioRefs.current[song._id] = el)}
-                            src={song.audio}
+                            src={audioSrc}
                             controls
                             onPlay={(e) => handleAudioPlay(song, e)}
                             onPause={(e) => handleAudioPauseOrEnd(song, e, false)}

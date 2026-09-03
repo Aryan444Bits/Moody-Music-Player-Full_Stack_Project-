@@ -1,12 +1,19 @@
 .upload-page {
     background: rgba(255, 255, 255, 0.05);
-    padding: 2rem;
+    padding: 2.5rem;
     border-radius: 1.5rem;
     width: 100%;
-    max-width: 500px;
+    max-width: 650px;
     margin: 2rem auto;
     border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    color: #ffffff;
+}
+
+.upload-subtitle {
+    font-size: 0.9rem;
+    color: #b0b0b0;
+    margin-top: 0.4rem;
 }
 
 .upload-form {
@@ -16,13 +23,63 @@
     margin-top: 1.5rem;
 }
 
-.upload-form input, .upload-form select {
-    padding: 0.8rem 1rem;
+.form-group-row {
+    display: flex;
+    gap: 1rem;
+}
+
+.form-group-row .input-field {
+    flex: 1;
+}
+
+.input-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    text-align: left;
+}
+
+.input-field label {
+    font-size: 0.85rem;
+    color: #d0c8e8;
+    font-weight: 600;
+}
+
+.upload-form input[type="text"],
+.upload-form input[type="number"],
+.upload-form select {
+    padding: 0.75rem 1rem;
     border-radius: 0.8rem;
-    border: 1px solid rgba(255,255,255,0.2);
-    background: rgba(0,0,0,0.2);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.3);
     color: white;
-    font-size: 1rem;
+    font-size: 0.95rem;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.upload-form input[type="text"]:focus,
+.upload-form input[type="number"]:focus,
+.upload-form select:focus {
+    border-color: #b26cff;
+}
+
+.upload-form select option {
+    background: #1e1b2e;
+    color: #ffffff;
+}
+
+.slider-container {
+    display: flex;
+    align-items: center;
+    height: 42px;
+}
+
+.slider-container input[type="range"] {
+    width: 100%;
+    accent-color: #b26cff;
+    cursor: pointer;
 }
 
 .file-input {
@@ -32,10 +89,52 @@
     text-align: left;
     font-size: 0.9rem;
     color: #aaa;
+    margin-top: 0.5rem;
+}
+
+.file-input label {
+    font-weight: 600;
+    color: #d0c8e8;
+}
+
+.file-input input[type="file"] {
+    padding: 0.5rem;
+    border-radius: 0.8rem;
+    border: 1px dashed rgba(255, 255, 255, 0.3);
+    background: rgba(0, 0, 0, 0.2);
+    color: #ccc;
+    cursor: pointer;
+}
+
+.submit-upload-btn {
+    margin-top: 1rem;
+    padding: 0.85rem;
+    background: linear-gradient(135deg, #8a2be2, #b26cff);
+    color: white;
+    font-weight: bold;
+    font-size: 1rem;
+    border: none;
+    border-radius: 0.8rem;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(178, 108, 255, 0.4);
 }
 
 .upload-message {
     margin-top: 1rem;
-    color: #b26cff;
     font-weight: bold;
+    font-size: 0.95rem;
+}
+
+.upload-message.success-msg {
+    color: #4caf50;
+}
+
+.upload-message.error-msg {
+    color: #ff6b6b;
+}
+
+@media (max-width: 600px) {
+    .form-group-row {
+        flex-direction: column;
+    }
 }
