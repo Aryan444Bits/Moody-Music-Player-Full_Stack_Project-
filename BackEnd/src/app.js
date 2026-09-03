@@ -2,6 +2,7 @@ const express = require("express");
 const songRoutes = require("./routes/song.routes");
 const authRoutes = require("./routes/auth.routes");
 const historyRoutes = require("./routes/history.routes");
+const feedbackRoutes = require("./routes/feedback.routes");
 const cors = require("cors");
 
 const app = express();
@@ -18,6 +19,7 @@ app.use(express.json());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/history', historyRoutes);
+app.use('/api/feedback', feedbackRoutes);
 app.use('/', songRoutes);
 
-module.exports = app;
+module.exports = app;
