@@ -68,10 +68,14 @@ export default function FacialExpression({ setSongs, setLoading, setMood }) {
         const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
 
         if (token && mostProbableExpression) {
+            const sid = getSessionId();
+            axios.post('http://localhost:3000/api/sessions/start', { sessionId: sid }, config)
+                .catch(err => console.log('Session start check:', err.message));
+
             axios.post('http://localhost:3000/api/moods', {
                 dominantEmotion: mostProbableExpression,
                 emotionProbabilities: detections[0].expressions,
-                sessionId: getSessionId()
+                sessionId: sid
             }, config)
             .then(() => console.log('Mood history saved successfully'))
             .catch(err => console.error('Error saving mood history:', err));

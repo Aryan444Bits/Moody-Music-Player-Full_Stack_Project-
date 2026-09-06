@@ -5,6 +5,7 @@ import UploadSong from './components/UploadSong';
 import Suggestion from './components/Suggestion';
 import ListeningHistory from './components/ListeningHistory';
 import MoodHistory from './components/MoodHistory';
+import MoodJourney from './components/MoodJourney';
 import Login from './components/Login';
 import Register from './components/Register';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -29,6 +30,7 @@ const Navigation = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginLeft: '1rem' }}>
           <Link to="/history">Listening History</Link>
           <Link to="/mood-history">Mood History</Link>
+          <Link to="/mood-journey">Mood Journey</Link>
           <span style={{ fontSize: '0.9rem', color: '#b26cff', fontWeight: 'bold' }}>
             👤 {user.name}
           </span>
@@ -90,6 +92,14 @@ function AppContent() {
           element={
             <ProtectedRoute>
               <MoodHistory />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/mood-journey"
+          element={
+            <ProtectedRoute>
+              <MoodJourney />
             </ProtectedRoute>
           }
         />
