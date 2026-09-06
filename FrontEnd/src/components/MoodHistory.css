@@ -1,0 +1,169 @@
+.mood-history-wrapper {
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.mood-history-card {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.mood-history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 1.2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.mood-history-header h2 {
+  font-size: 1.8rem;
+  color: #ffffff;
+  margin: 0 0 0.4rem 0;
+}
+
+.mood-history-subtitle {
+  font-size: 0.9rem;
+  color: #a0a0a0;
+  margin: 0;
+}
+
+.mood-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.mood-item-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mood-item-card:hover {
+  border-color: rgba(178, 108, 255, 0.3);
+  box-shadow: 0 4px 20px rgba(178, 108, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.mood-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.mood-badge-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.mood-timestamp {
+  font-size: 0.85rem;
+  color: #a0a0a0;
+}
+
+.session-tag {
+  font-size: 0.78rem;
+  font-family: monospace;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+  color: #b26cff;
+  border: 1px solid rgba(178, 108, 255, 0.2);
+}
+
+.delete-entry-btn {
+  background: transparent;
+  border: none;
+  color: #888;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.3rem 0.6rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.delete-entry-btn:hover:not(:disabled) {
+  color: #ff6b6b;
+  background: rgba(255, 77, 77, 0.15);
+}
+
+.mood-item-body h4 {
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #b26cff;
+  margin: 0 0 0.75rem 0;
+}
+
+.probabilities-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.75rem 1.25rem;
+}
+
+.prob-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.prob-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  color: #d0d0d0;
+}
+
+.prob-label {
+  text-transform: capitalize;
+  font-weight: 500;
+}
+
+.prob-val {
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.prob-bar-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.prob-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  transition: width 0.4s ease;
+}
+
+.prob-bar-fill.happy { background: linear-gradient(90deg, #ffd700, #ffae00); }
+.prob-bar-fill.sad { background: linear-gradient(90deg, #6495ed, #4169e1); }
+.prob-bar-fill.angry { background: linear-gradient(90deg, #ff6347, #dc143c); }
+.prob-bar-fill.neutral { background: linear-gradient(90deg, #c0c0c0, #a9a9a9); }
+.prob-bar-fill.surprised { background: linear-gradient(90deg, #ff69b4, #da70d6); }
+.prob-bar-fill.fearful { background: linear-gradient(90deg, #ba55d3, #8a2be2); }
+.prob-bar-fill.disgusted { background: linear-gradient(90deg, #3cb371, #2e8b57); }
+
+.error-message {
+  color: #ff6b6b;
+  margin-bottom: 1rem;
+}

@@ -56,7 +56,26 @@ export default function FacialExpression({ setSongs, setLoading, setMood }) {
         setMood(mostProbableExpression);
         setStatus('fetching');
 
+        const getSessionId = () => {
+            let sid = sessionStorage.getItem('moody_session_id');
+            if (!sid) {
+                sid = 'sess_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now();
+                sessionStorage.setItem('moody_session_id', sid);
+            }
+            return sid;
+        };
+
         const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+
+        if (token && mostProbableExpression) {
+            axios.post('http://localhost:3000/api/moods', {
+                dominantEmotion: mostProbableExpression,
+                emotionProbabilities: detections[0].expressions,
+                sessionId: getSessionId()
+            }, config)
+            .then(() => console.log('Mood history saved successfully'))
+            .catch(err => console.error('Error saving mood history:', err));
+        }
 
         axios.get(`http://localhost:3000/api/recommendations?mood=${mostProbableExpression}`, config)
         .then(response => {

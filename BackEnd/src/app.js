@@ -4,6 +4,7 @@ const authRoutes = require("./routes/auth.routes");
 const historyRoutes = require("./routes/history.routes");
 const feedbackRoutes = require("./routes/feedback.routes");
 const recommendationRoutes = require("./routes/recommendation.routes");
+const moodRoutes = require("./routes/mood.routes");
 const cors = require("cors");
 
 const app = express();
@@ -22,6 +23,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/history', historyRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/recommendations', recommendationRoutes);
+app.use('/api/moods', moodRoutes);
 app.use('/', songRoutes);
 
 module.exports = app;
