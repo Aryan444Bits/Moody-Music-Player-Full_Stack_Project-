@@ -1,6 +1,6 @@
 const Song = require('../models/song.model');
 const Playlist = require('../models/playlist.model');
-const { generateCompletion, extractMusicPreferences, curatePlaylistFromCandidates } = require('../service/ai.service');
+const { generateCompletion, extractMusicPreferences, curatePlaylistFromCandidates, suggestSongMetadata } = require('../service/ai.service');
 const { getRecommendationsFromPreferences } = require('../service/recommendation.service');
 
 /**
@@ -229,9 +229,60 @@ const saveAIPlaylist = async (req, res) => {
   }
 };
 
+/**
+ * AI-assisted Metadata Suggestion endpoint for song uploads
+ * @route   POST /api/ai/suggest-metadata
+ * @access  Protected (Auth required)
+ */
+const suggestMetadata = async (req, res) => {
+  try {
+    const { title, artist, language, description } = req.body;
+
+    if (!title && !artist && !description) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide at least a song title, artist, or description to suggest metadata'
+      });
+    }
+
+    const suggestions = await suggestSongMetadata({
+      title: title ? String(title).trim() : '',
+      artist: artist ? String(artist).trim() : '',
+      language: language ? String(language).trim() : '',
+      description: description ? String(description).trim() : ''
+    });
+
+    // Whitelist and normalize fields strictly
+    const ALLOWED_MOODS = ['happy', 'sad', 'angry', 'surprised', 'neutral', 'relaxed', 'energetic', 'chill'];
+    const ALLOWED_GENRES = ['Pop', 'Rock', 'Hip-Hop', 'R&B', 'Electronic', 'Acoustic', 'Ambient', 'Classical', 'Jazz', 'Lo-Fi', 'Indie', 'Other'];
+    const ALLOWED_LANGUAGES = ['English', 'Spanish', 'Hindi', 'French', 'Japanese', 'German', 'Instrumental', 'Other'];
+
+    const whitelistedSuggestions = {
+      mood: ALLOWED_MOODS.includes(suggestions.mood) ? suggestions.mood : 'neutral',
+      genre: ALLOWED_GENRES.includes(suggestions.genre) ? suggestions.genre : 'Other',
+      language: ALLOWED_LANGUAGES.includes(suggestions.language) ? suggestions.language : 'English',
+      energy: Math.min(100, Math.max(0, parseInt(suggestions.energy, 10) || 50)),
+      tags: Array.isArray(suggestions.tags) ? suggestions.tags.slice(0, 8) : []
+    };
+
+    return res.status(200).json({
+      success: true,
+      suggestions: whitelistedSuggestions
+    });
+  } catch (error) {
+    console.error('Error suggesting metadata:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to generate metadata suggestions',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   testAIConnection,
   processMusicQuery,
   generateAIPlaylist,
-  saveAIPlaylist
+  saveAIPlaylist,
+  suggestMetadata
 };

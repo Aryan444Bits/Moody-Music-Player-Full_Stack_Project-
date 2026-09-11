@@ -271,9 +271,84 @@ ${JSON.stringify(candidates)}`;
   }
 }
 
+/**
+ * Generate metadata suggestions based purely on textual details (title, artist, language, description).
+ * 
+ * @param {Object} inputData
+ * @param {string} inputData.title - Song title
+ * @param {string} inputData.artist - Artist name
+ * @param {string} [inputData.language] - Optional known language
+ * @param {string} [inputData.description] - Optional user notes/description
+ * @returns {Promise<{mood: string, genre: string, language: string, energy: number, tags: string[]}>}
+ */
+async function suggestSongMetadata({ title, artist, language, description }) {
+  const systemPrompt = `You are an expert music metadata classifier.
+Analyze the provided song textual details (title, artist, language, user description) and suggest accurate, standardized metadata fields.
+
+CRITICAL CONSTRAINTS:
+1. You are analyzing ONLY textual details. Do NOT claim to analyze audio files.
+2. Return ONLY a single raw valid JSON object with NO markdown formatting, NO backticks, NO extra text.
+
+Allowed Enum Options:
+- mood: one of ["happy", "sad", "angry", "surprised", "neutral", "relaxed", "energetic", "chill"]
+- genre: one of ["Pop", "Rock", "Hip-Hop", "R&B", "Electronic", "Acoustic", "Ambient", "Classical", "Jazz", "Lo-Fi", "Indie", "Other"]
+- language: one of ["English", "Spanish", "Hindi", "French", "Japanese", "German", "Instrumental", "Other"]
+- energy: integer between 0 and 100
+- tags: array of 2-5 relevant keyword strings (e.g. ["study", "relaxing", "night"])
+
+Required Output Schema:
+{
+  "mood": string,
+  "genre": string,
+  "language": string,
+  "energy": number,
+  "tags": string[]
+}`;
+
+  const promptText = `Song Title: "${title || ''}"
+Artist: "${artist || ''}"
+Language Note: "${language || ''}"
+User Description / Vibe Notes: "${description || ''}"`;
+
+  const result = await generateCompletion({
+    prompt: promptText,
+    systemPrompt,
+    temperature: 0.3
+  });
+
+  let rawContent = result.content.trim();
+
+  // Strip possible markdown code block wrappers
+  if (rawContent.startsWith('```')) {
+    rawContent = rawContent.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+  }
+
+  try {
+    const parsed = JSON.parse(rawContent);
+
+    return {
+      mood: typeof parsed.mood === 'string' ? parsed.mood.trim().toLowerCase() : 'neutral',
+      genre: typeof parsed.genre === 'string' ? parsed.genre.trim() : 'Pop',
+      language: typeof parsed.language === 'string' ? parsed.language.trim() : 'English',
+      energy: typeof parsed.energy === 'number' && !isNaN(parsed.energy) ? Math.min(100, Math.max(0, Math.round(parsed.energy))) : 50,
+      tags: Array.isArray(parsed.tags) ? parsed.tags.map(t => String(t).trim().toLowerCase()).filter(Boolean) : []
+    };
+  } catch (parseError) {
+    console.warn('Failed to parse OpenRouter metadata JSON output:', rawContent);
+    return {
+      mood: 'neutral',
+      genre: 'Other',
+      language: 'English',
+      energy: 50,
+      tags: ['music']
+    };
+  }
+}
+
 module.exports = {
   generateCompletion,
   extractMusicPreferences,
   curatePlaylistFromCandidates,
+  suggestSongMetadata,
   DEFAULT_MODEL
 };
