@@ -6,6 +6,7 @@ import Suggestion from './components/Suggestion';
 import ListeningHistory from './components/ListeningHistory';
 import MoodHistory from './components/MoodHistory';
 import MoodJourney from './components/MoodJourney';
+import AIMusicAssistant from './components/AIMusicAssistant';
 import Login from './components/Login';
 import Register from './components/Register';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -24,6 +25,7 @@ const Navigation = () => {
   return (
     <nav className="main-nav">
       <Link to="/">Home</Link>
+      <Link to="/ai-assistant">🤖 AI Assistant</Link>
       <Link to="/suggestion">Mood Suggestions</Link>
       <Link to="/upload">Upload Song</Link>
       {user ? (
@@ -69,6 +71,7 @@ function AppContent() {
 
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/ai-assistant" element={<AIMusicAssistant />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route

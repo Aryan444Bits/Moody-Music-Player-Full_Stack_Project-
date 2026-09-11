@@ -244,6 +244,139 @@ const isCompatibleMood = (songMood, detectedMood) => {
   return pairs[d] ? pairs[d].includes(s) : false;
 };
 
+/**
+ * Recommendation scoring based on AI-extracted preferences (mood, energy, genre, language, activity, tags)
+ * combined with deterministic MongoDB candidate search and user historical telemetry.
+ */
+const getRecommendationsFromPreferences = async ({ userId, preferences }) => {
+  const songs = await Song.find({});
+  if (!songs || songs.length === 0) {
+    return [];
+  }
+
+  // Fetch behavioral telemetry if user is logged in
+  let likedSongIds = new Set();
+  let replayedSongIds = new Set();
+  let skippedSongIds = new Set();
+
+  if (userId) {
+    const [userLikes, userFeedback] = await Promise.all([
+      Like.find({ userId }),
+      Feedback.find({ userId })
+    ]);
+
+    userLikes.forEach((l) => {
+      if (l.songId) likedSongIds.add(l.songId.toString());
+    });
+
+    userFeedback.forEach((f) => {
+      if (f.songId) {
+        const sid = f.songId.toString();
+        if (f.action === 'skip') skippedSongIds.add(sid);
+        if (f.action === 'replay') replayedSongIds.add(sid);
+      }
+    });
+  }
+
+  const { mood, energy, genre, language, activity, tags = [] } = preferences || {};
+
+  const scoredSongs = songs.map((songDoc) => {
+    const song = songDoc.toJSON ? songDoc.toJSON() : songDoc;
+    const songIdStr = song._id.toString();
+    let score = 25; // Base score
+    const reasons = [];
+
+    // 1. Language Match (+30)
+    if (language && song.language) {
+      if (song.language.toLowerCase() === language.toLowerCase()) {
+        score += 30;
+        reasons.push(`Matches preferred language (${song.language})`);
+      }
+    }
+
+    // 2. Mood Match (+25) or Compatible (+15)
+    if (mood && song.mood) {
+      const sMood = song.mood.toLowerCase();
+      const pMood = mood.toLowerCase();
+      if (sMood === pMood) {
+        score += 25;
+        reasons.push(`Matches requested mood (${song.mood})`);
+      } else if (isCompatibleMood(sMood, pMood)) {
+        score += 15;
+        reasons.push(`Complements requested mood (${song.mood})`);
+      }
+    }
+
+    // 3. Genre Match (+20)
+    if (genre && song.genre) {
+      if (song.genre.toLowerCase() === genre.toLowerCase()) {
+        score += 20;
+        reasons.push(`Matches genre (${song.genre})`);
+      }
+    }
+
+    // 4. Energy Level Alignment (+15)
+    if (energy !== null && energy !== undefined && song.energy !== undefined) {
+      const diff = Math.abs(song.energy - energy);
+      if (diff <= 15) {
+        score += 15;
+        reasons.push(`Target energy level (${song.energy}%)`);
+      } else if (diff <= 30) {
+        score += 8;
+        reasons.push(`Close energy level (${song.energy}%)`);
+      }
+    }
+
+    // 5. Activity & Keyword Tag Overlap (+15)
+    const combinedSearchText = `${song.title || ''} ${song.artist || ''} ${song.genre || ''} ${(song.tags || []).join(' ')}`.toLowerCase();
+    
+    let tagMatched = false;
+    if (activity && combinedSearchText.includes(activity.toLowerCase())) {
+      score += 15;
+      reasons.push(`Matches activity context (${activity})`);
+      tagMatched = true;
+    }
+
+    if (Array.isArray(tags) && tags.length > 0) {
+      const matchingTags = tags.filter(t => combinedSearchText.includes(t.toLowerCase()));
+      if (matchingTags.length > 0) {
+        if (!tagMatched) score += 15;
+        reasons.push(`Matches keywords (${matchingTags.slice(0, 2).join(', ')})`);
+      }
+    }
+
+    // 6. User Behavioral Bonuses & Penalties
+    if (likedSongIds.has(songIdStr)) {
+      score += 15;
+      reasons.push('In your Liked Songs');
+    }
+    if (replayedSongIds.has(songIdStr)) {
+      score += 10;
+      reasons.push('Frequently replayed');
+    }
+    if (skippedSongIds.has(songIdStr)) {
+      score -= 25;
+      reasons.push('Previously skipped');
+    }
+
+    if (reasons.length === 0) {
+      reasons.push('Curated track matching your query');
+    }
+
+    const finalScore = Math.min(100, Math.max(0, score));
+
+    return {
+      ...song,
+      recommendationScore: finalScore,
+      reasons
+    };
+  });
+
+  scoredSongs.sort((a, b) => b.recommendationScore - a.recommendationScore);
+  return scoredSongs;
+};
+
 module.exports = {
-  getRecommendations
+  getRecommendations,
+  getRecommendationsFromPreferences
 };

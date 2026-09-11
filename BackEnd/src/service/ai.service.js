@@ -128,7 +128,81 @@ async function generateCompletion(options = {}) {
   }
 }
 
+/**
+ * Extract structured music preferences from natural language query using OpenRouter.
+ * 
+ * @param {string} userQuery - Natural language request from user
+ * @returns {Promise<{mood: string|null, energy: number|null, genre: string|null, language: string|null, activity: string|null, tags: string[]}>}
+ */
+async function extractMusicPreferences(userQuery) {
+  if (!userQuery || typeof userQuery !== 'string' || userQuery.trim().length === 0) {
+    throw new Error('User query string is required');
+  }
+
+  const systemPrompt = `You are an expert music metadata recommendation assistant.
+Analyze the user's natural language music request and extract structured preference fields into a raw JSON object.
+
+Output MUST be a single raw valid JSON object with NO markdown formatting, NO backticks, NO extra text.
+
+Schema:
+{
+  "mood": string | null,        // e.g. "calm", "happy", "sad", "energetic", "focus", "relaxed", "neutral", "romantic", "chill", "angry"
+  "energy": number | null,      // scale 0 to 100 (e.g. low=25, medium=50, high=85), or null if unspecified
+  "genre": string | null,       // e.g. "Pop", "Rock", "Lo-Fi", "Classical", "Hip-Hop", "Acoustic", "Jazz", "Edm" or null
+  "language": string | null,    // e.g. "Hindi", "English", "Punjabi", "Spanish" or null
+  "activity": string | null,    // e.g. "study", "workout", "sleep", "party", "relax", "driving", "coding" or null
+  "tags": string[]              // array of relevant keyword tags extracted from the prompt, e.g. ["relaxing", "calming"]
+}
+
+Guidelines:
+- "stressed" / "calming" -> mood: "calm", energy: 25, activity: "relax", tags: ["relaxing", "calming"]
+- "energetic Hindi songs" -> mood: "energetic", energy: 85, language: "Hindi", tags: ["upbeat", "energetic"]
+- "music for studying" -> mood: "focus", energy: 35, activity: "study", tags: ["study", "focus"]
+- "positive but not too energetic" -> mood: "happy", energy: 45, tags: ["positive", "chill"]
+- If query specifies language like "Hindi", "English", set language field.
+- Never output song titles or artist names. Only output metadata preference JSON.`;
+
+  const result = await generateCompletion({
+    prompt: `Extract music preferences for this request: "${userQuery.trim()}"`,
+    systemPrompt,
+    temperature: 0.2
+  });
+
+  let rawContent = result.content.trim();
+
+  // Strip possible markdown code block wrappers
+  if (rawContent.startsWith('```')) {
+    rawContent = rawContent.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+  }
+
+  try {
+    const parsed = JSON.parse(rawContent);
+
+    // Validate and sanitize parsed fields
+    return {
+      mood: typeof parsed.mood === 'string' && parsed.mood.trim() ? parsed.mood.trim().toLowerCase() : null,
+      energy: typeof parsed.energy === 'number' && !isNaN(parsed.energy) ? Math.min(100, Math.max(0, Math.round(parsed.energy))) : null,
+      genre: typeof parsed.genre === 'string' && parsed.genre.trim() ? parsed.genre.trim() : null,
+      language: typeof parsed.language === 'string' && parsed.language.trim() ? parsed.language.trim() : null,
+      activity: typeof parsed.activity === 'string' && parsed.activity.trim() ? parsed.activity.trim().toLowerCase() : null,
+      tags: Array.isArray(parsed.tags) ? parsed.tags.map(t => String(t).trim().toLowerCase()).filter(Boolean) : []
+    };
+  } catch (parseError) {
+    console.warn('Failed to parse OpenRouter JSON preferences output:', rawContent);
+    // Safe fallback preferences based on simple keyword extraction
+    return {
+      mood: null,
+      energy: null,
+      genre: null,
+      language: null,
+      activity: null,
+      tags: userQuery.toLowerCase().split(/\s+/).filter(w => w.length > 3)
+    };
+  }
+}
+
 module.exports = {
   generateCompletion,
+  extractMusicPreferences,
   DEFAULT_MODEL
 };
