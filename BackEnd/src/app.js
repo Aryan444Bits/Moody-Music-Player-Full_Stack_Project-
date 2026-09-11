@@ -6,6 +6,7 @@ const feedbackRoutes = require("./routes/feedback.routes");
 const recommendationRoutes = require("./routes/recommendation.routes");
 const moodRoutes = require("./routes/mood.routes");
 const sessionRoutes = require("./routes/session.routes");
+const aiRoutes = require("./routes/ai.routes");
 const cors = require("cors");
 
 const app = express();
@@ -26,6 +27,7 @@ app.use('/api/feedback', feedbackRoutes);
 app.use('/api/recommendations', recommendationRoutes);
 app.use('/api/moods', moodRoutes);
 app.use('/api/sessions', sessionRoutes);
+app.use('/api/ai', aiRoutes);
 app.use('/', songRoutes);
 
 module.exports = app;
