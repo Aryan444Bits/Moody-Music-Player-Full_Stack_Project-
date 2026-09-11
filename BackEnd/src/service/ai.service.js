@@ -201,8 +201,79 @@ Guidelines:
   }
 }
 
+/**
+ * Send real candidate song metadata to OpenRouter to select and order a playlist.
+ * 
+ * @param {Object} params
+ * @param {string} params.request - User natural language request e.g. "Create a late-night study playlist"
+ * @param {Array<Object>} params.candidates - Array of candidate song metadata objects [{ id, title, artist, mood, genre, language, energy, tags }]
+ * @returns {Promise<{playlistName: string, reason: string, songIds: string[]}>}
+ */
+async function curatePlaylistFromCandidates({ request, candidates }) {
+  if (!request || typeof request !== 'string' || request.trim().length === 0) {
+    throw new Error('Playlist request string is required');
+  }
+
+  if (!Array.isArray(candidates) || candidates.length === 0) {
+    throw new Error('No candidate songs available to curate playlist from');
+  }
+
+  const systemPrompt = `You are an expert music DJ and playlist curator.
+Your job is to curate an ordered playlist based on the user's natural language request using ONLY the candidate songs provided in JSON format.
+
+CRITICAL CONSTRAINTS:
+1. You MUST ONLY select song IDs from the provided candidate list.
+2. DO NOT invent, hallucinate, or generate any song IDs, titles, or artists outside of the provided list.
+3. Select between 3 to 10 of the best matching candidates and order them logically for smooth flow.
+4. Output MUST be a single raw valid JSON object with NO markdown formatting, NO backticks, NO extra text.
+
+Required Output Schema:
+{
+  "playlistName": string,  // Creative theme title, e.g. "Late Night Ambient Focus"
+  "reason": string,        // Brief 1-2 sentence explanation of why these songs were curated and ordered this way
+  "songIds": string[]      // Array of valid candidate song "id" values ONLY, ordered from first to last song
+}`;
+
+  const promptText = `User Request: "${request.trim()}"
+
+Candidate Songs JSON:
+${JSON.stringify(candidates)}`;
+
+  const result = await generateCompletion({
+    prompt: promptText,
+    systemPrompt,
+    temperature: 0.3
+  });
+
+  let rawContent = result.content.trim();
+
+  // Strip possible markdown code block wrappers
+  if (rawContent.startsWith('```')) {
+    rawContent = rawContent.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+  }
+
+  try {
+    const parsed = JSON.parse(rawContent);
+
+    return {
+      playlistName: typeof parsed.playlistName === 'string' && parsed.playlistName.trim() ? parsed.playlistName.trim() : 'AI Curated Playlist',
+      reason: typeof parsed.reason === 'string' && parsed.reason.trim() ? parsed.reason.trim() : 'Curated matching your prompt',
+      songIds: Array.isArray(parsed.songIds) ? parsed.songIds.map(id => String(id).trim()).filter(Boolean) : []
+    };
+  } catch (parseError) {
+    console.warn('Failed to parse OpenRouter playlist JSON output:', rawContent);
+    // Fallback: Return all candidate IDs up to 10
+    return {
+      playlistName: 'AI Curated Playlist',
+      reason: 'Curated list matching your request',
+      songIds: candidates.slice(0, 10).map(c => c.id)
+    };
+  }
+}
+
 module.exports = {
   generateCompletion,
   extractMusicPreferences,
+  curatePlaylistFromCandidates,
   DEFAULT_MODEL
 };

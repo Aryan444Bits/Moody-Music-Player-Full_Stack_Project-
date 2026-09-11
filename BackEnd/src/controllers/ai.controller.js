@@ -1,4 +1,6 @@
-const { generateCompletion, extractMusicPreferences } = require('../service/ai.service');
+const Song = require('../models/song.model');
+const Playlist = require('../models/playlist.model');
+const { generateCompletion, extractMusicPreferences, curatePlaylistFromCandidates } = require('../service/ai.service');
 const { getRecommendationsFromPreferences } = require('../service/recommendation.service');
 
 /**
@@ -80,7 +82,156 @@ const processMusicQuery = async (req, res) => {
   }
 };
 
+/**
+ * AI Playlist Generation endpoint
+ * @route   POST /api/ai/generate-playlist
+ * @access  Public / Optional Auth
+ */
+const generateAIPlaylist = async (req, res) => {
+  try {
+    const { request } = req.body;
+
+    if (!request || typeof request !== 'string' || request.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid playlist request prompt'
+      });
+    }
+
+    // 1. Fetch real candidate songs from MongoDB
+    const candidateSongs = await Song.find({});
+
+    if (!candidateSongs || candidateSongs.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'No candidate songs found in database to generate playlist'
+      });
+    }
+
+    // 2. Map candidate songs to lightweight metadata array
+    const candidateMetadata = candidateSongs.map((s) => {
+      const sObj = s.toJSON ? s.toJSON() : s;
+      return {
+        id: sObj._id.toString(),
+        title: sObj.title,
+        artist: sObj.artist,
+        mood: sObj.mood,
+        genre: sObj.genre,
+        language: sObj.language,
+        energy: sObj.energy,
+        tags: sObj.tags
+      };
+    });
+
+    // Create lookup map of valid candidate IDs
+    const candidateMap = new Map(candidateSongs.map((s) => {
+      const sObj = s.toJSON ? s.toJSON() : s;
+      return [sObj._id.toString(), sObj];
+    }));
+
+    // 3. Send candidate metadata list to OpenRouter LLM for selection & ordering
+    const curationResult = await curatePlaylistFromCandidates({
+      request: request.trim(),
+      candidates: candidateMetadata
+    });
+
+    // 4. STRICT BACKEND ID VALIDATION
+    // Verify every songId returned by the LLM. Reject IDs that were not part of candidate set!
+    const verifiedSongs = [];
+    const seenIds = new Set();
+
+    if (Array.isArray(curationResult.songIds)) {
+      curationResult.songIds.forEach((id) => {
+        const cleanId = String(id).trim();
+        if (candidateMap.has(cleanId) && !seenIds.has(cleanId)) {
+          verifiedSongs.push(candidateMap.get(cleanId));
+          seenIds.add(cleanId);
+        }
+      });
+    }
+
+    // Fallback: If LLM failed to return valid candidate IDs, fill using recommendation engine
+    if (verifiedSongs.length === 0) {
+      console.warn('LLM did not return valid candidate IDs. Falling back to deterministic recommendation engine.');
+      const extractedPrefs = await extractMusicPreferences(request);
+      const fallbackScored = await getRecommendationsFromPreferences({
+        userId: req.user ? req.user._id : null,
+        preferences: extractedPrefs
+      });
+      verifiedSongs.push(...fallbackScored.slice(0, 8));
+    }
+
+    return res.status(200).json({
+      success: true,
+      request: request.trim(),
+      playlist: {
+        playlistName: curationResult.playlistName || 'AI Curated Playlist',
+        reason: curationResult.reason || 'Handpicked tracks matching your request',
+        songs: verifiedSongs
+      }
+    });
+  } catch (error) {
+    console.error('Error generating AI playlist:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to generate AI playlist',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Save AI Curated Playlist for authenticated user
+ * @route   POST /api/ai/save-playlist
+ * @access  Protected (Auth required)
+ */
+const saveAIPlaylist = async (req, res) => {
+  try {
+    const { name, description, songIds } = req.body;
+
+    if (!name || !Array.isArray(songIds) || songIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Playlist name and non-empty songIds array are required'
+      });
+    }
+
+    // Verify all songIds exist in DB
+    const validSongs = await Song.find({ _id: { $in: songIds } });
+    if (validSongs.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'None of the provided song IDs exist in database'
+      });
+    }
+
+    const playlist = await Playlist.create({
+      name: name.trim(),
+      description: description ? description.trim() : '',
+      songs: validSongs.map(s => s._id),
+      user: req.user ? req.user._id : null
+    });
+
+    const populatedPlaylist = await Playlist.findById(playlist._id).populate('songs');
+
+    return res.status(201).json({
+      success: true,
+      message: 'Playlist saved successfully!',
+      playlist: populatedPlaylist
+    });
+  } catch (error) {
+    console.error('Error saving AI playlist:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to save playlist',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   testAIConnection,
-  processMusicQuery
+  processMusicQuery,
+  generateAIPlaylist,
+  saveAIPlaylist
 };
