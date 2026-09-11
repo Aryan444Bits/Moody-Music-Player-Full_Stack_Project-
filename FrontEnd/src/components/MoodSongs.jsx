@@ -13,6 +13,51 @@ const MoodSongs = ({ Songs, loading, mood }) => {
 
   const [likedSongIds, setLikedSongIds] = useState(new Set());
   const [actionFeedback, setActionFeedback] = useState({});
+  const [explanations, setExplanations] = useState({});
+  const [loadingExplanations, setLoadingExplanations] = useState({});
+
+  const handleExplainSong = async (song) => {
+    const sId = song._id ? song._id.toString() : '';
+    if (!sId) return;
+
+    if (explanations[sId]) {
+      setExplanations((prev) => {
+        const next = { ...prev };
+        delete next[sId];
+        return next;
+      });
+      return;
+    }
+
+    setLoadingExplanations((prev) => ({ ...prev, [sId]: true }));
+
+    try {
+      const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+      const response = await axios.post(
+        `${API_BASE_URL}/api/ai/explain-song`,
+        {
+          songId: sId,
+          detectedMood: mood || song.mood || 'neutral',
+          songTitle: song.title,
+          artist: song.artist,
+          songMood: song.mood,
+          genre: song.genre,
+          energy: song.energy,
+          recommendationScore: song.recommendationScore,
+          reasons: song.reasons
+        },
+        config
+      );
+
+      if (response.data && response.data.explanation) {
+        setExplanations((prev) => ({ ...prev, [sId]: response.data.explanation }));
+      }
+    } catch (err) {
+      console.error('Error fetching song explanation:', err);
+    } finally {
+      setLoadingExplanations((prev) => ({ ...prev, [sId]: false }));
+    }
+  };
 
   // Fetch current user's liked songs on mount or auth change
   useEffect(() => {
@@ -241,12 +286,23 @@ const MoodSongs = ({ Songs, loading, mood }) => {
                                 {song.title || song.artist || 'Untitled Song'}
                               </p>
 
-                              {/* Recommendation Score Badge */}
+                              {/* Recommendation Score Badge & AI Explanation Trigger */}
                               {score !== null && (
                                 <span className="score-badge" title="Explainable Recommendation Match Score">
                                   ✨ {score}% Match
                                 </span>
                               )}
+
+                              <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => handleExplainSong(song)}
+                                className="why-song-btn"
+                                disabled={loadingExplanations[songIdStr]}
+                                title="Get short AI explanation based on backend facts"
+                              >
+                                {loadingExplanations[songIdStr] ? '✨ Explaining...' : '❓ Why this song?'}
+                              </motion.button>
                             </div>
 
                             <p style={{ fontSize: '0.85rem', color: '#b0b0b0', margin: '0.3rem 0 0.2rem 0' }}>
@@ -276,6 +332,21 @@ const MoodSongs = ({ Songs, loading, mood }) => {
                                 <span className="reason-text">{reasons.join(' • ')}</span>
                               </div>
                             )}
+
+                            {/* AI Explanation Callout Box */}
+                            <AnimatePresence>
+                              {explanations[songIdStr] && (
+                                <motion.div
+                                  className="ai-explanation-box"
+                                  initial={{ opacity: 0, height: 0 }}
+                                  animate={{ opacity: 1, height: 'auto' }}
+                                  exit={{ opacity: 0, height: 0 }}
+                                >
+                                  <span className="ai-expl-icon">🤖</span>
+                                  <p className="ai-expl-text">"{explanations[songIdStr]}"</p>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
                           </div>
                           
                           {/* Like Button */}

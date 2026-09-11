@@ -1,6 +1,12 @@
 const Song = require('../models/song.model');
 const Playlist = require('../models/playlist.model');
-const { generateCompletion, extractMusicPreferences, curatePlaylistFromCandidates, suggestSongMetadata } = require('../service/ai.service');
+const {
+  generateCompletion,
+  extractMusicPreferences,
+  curatePlaylistFromCandidates,
+  suggestSongMetadata,
+  explainSongRecommendation
+} = require('../service/ai.service');
 const { getRecommendationsFromPreferences } = require('../service/recommendation.service');
 
 /**
@@ -279,10 +285,68 @@ const suggestMetadata = async (req, res) => {
   }
 };
 
+/**
+ * Explain why a song was recommended using supplied backend facts
+ * @route   POST /api/ai/explain-song
+ * @access  Public / Optional Auth
+ */
+const explainSong = async (req, res) => {
+  try {
+    const {
+      songId,
+      detectedMood,
+      songTitle,
+      artist,
+      songMood,
+      genre,
+      energy,
+      recommendationScore,
+      reasons
+    } = req.body;
+
+    if (!songId) {
+      return res.status(400).json({
+        success: false,
+        message: 'songId is required to generate an explanation'
+      });
+    }
+
+    const userId = req.user ? req.user._id.toString() : 'guest';
+
+    const result = await explainSongRecommendation({
+      songId: String(songId).trim(),
+      detectedMood: detectedMood ? String(detectedMood).trim() : 'neutral',
+      userId,
+      songTitle: songTitle ? String(songTitle).trim() : '',
+      artist: artist ? String(artist).trim() : '',
+      songMood: songMood ? String(songMood).trim() : '',
+      genre: genre ? String(genre).trim() : '',
+      energy: energy !== undefined ? Number(energy) : undefined,
+      recommendationScore: recommendationScore !== undefined ? Number(recommendationScore) : undefined,
+      reasons: Array.isArray(reasons) ? reasons : []
+    });
+
+    return res.status(200).json({
+      success: true,
+      songId,
+      explanation: result.explanation,
+      cached: result.cached
+    });
+  } catch (error) {
+    console.error('Error generating song explanation:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to generate song explanation',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   testAIConnection,
   processMusicQuery,
   generateAIPlaylist,
   saveAIPlaylist,
-  suggestMetadata
+  suggestMetadata,
+  explainSong
 };

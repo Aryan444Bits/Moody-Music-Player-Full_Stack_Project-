@@ -345,10 +345,107 @@ User Description / Vibe Notes: "${description || ''}"`;
   }
 }
 
+// Simple TTL Cache for song explanations (1 hour TTL)
+const explanationCache = new Map();
+const CACHE_TTL_MS = 60 * 60 * 1000;
+
+/**
+ * Generate a short 1-sentence AI explanation for why a song was recommended based ONLY on supplied backend facts.
+ * 
+ * @param {Object} facts
+ * @param {string} facts.songId - Mongoose Song ID
+ * @param {string} [facts.detectedMood] - User detected mood
+ * @param {string} [facts.userId] - User ID if available
+ * @param {string} facts.songTitle - Song title
+ * @param {string} facts.artist - Artist name
+ * @param {string} [facts.songMood] - Song mood tag
+ * @param {string} [facts.genre] - Song genre
+ * @param {number} [facts.energy] - Song energy level (0-100)
+ * @param {number} [facts.recommendationScore] - Match score percentage
+ * @param {Array<string>} [facts.reasons] - Deterministic reason strings computed by recommendation engine
+ * @returns {Promise<{explanation: string, cached: boolean}>}
+ */
+async function explainSongRecommendation(facts = {}) {
+  const {
+    songId,
+    detectedMood = 'neutral',
+    userId = 'guest',
+    songTitle,
+    artist,
+    songMood,
+    genre,
+    energy,
+    recommendationScore,
+    reasons = []
+  } = facts;
+
+  if (!songId) {
+    throw new Error('songId is required for generating an explanation');
+  }
+
+  // Generate cache key
+  const cacheKey = `${songId}:${detectedMood}:${userId}`;
+  const cachedEntry = explanationCache.get(cacheKey);
+
+  if (cachedEntry && (Date.now() - cachedEntry.timestamp < CACHE_TTL_MS)) {
+    return {
+      explanation: cachedEntry.explanation,
+      cached: true
+    };
+  }
+
+  const systemPrompt = `You are a music recommendation explanation assistant.
+Your ONLY job is to synthesize the provided backend facts into a single concise, friendly 1-sentence explanation of why a song was recommended.
+
+CRITICAL RULES:
+1. Use ONLY the facts provided in the JSON input (detected mood, song mood, genre, energy, match score, user preferences, and deterministic reasons).
+2. DO NOT invent or assume any facts about the artist, song history, lyrics, or user behavior that are not explicitly provided.
+3. Keep the explanation under 25 words in 1 natural sentence.
+4. Output MUST be raw text (1 sentence) with NO quotes, NO markdown formatting, NO extra commentary.`;
+
+  const promptText = `Facts:
+- User Detected Mood: "${detectedMood}"
+- Song Title: "${songTitle || 'Untitled'}" by "${artist || 'Unknown'}"
+- Song Mood: "${songMood || 'neutral'}"
+- Genre: "${genre || 'Music'}"
+- Energy Level: ${energy !== undefined ? energy + '%' : 'Medium'}
+- Match Score: ${recommendationScore !== undefined ? recommendationScore + '%' : 'High'}
+- Key Signals: ${reasons.length > 0 ? reasons.join(', ') : 'Curated recommendation'}`;
+
+  let explanation = '';
+
+  try {
+    const result = await generateCompletion({
+      prompt: promptText,
+      systemPrompt,
+      temperature: 0.2
+    });
+
+    explanation = result.content.trim().replace(/^["']|["']$/g, '');
+  } catch (err) {
+    console.warn('OpenRouter explanation call failed, using deterministic fallback:', err.message);
+    // Deterministic factual fallback if LLM fails
+    const firstReason = reasons.length > 0 ? reasons[0] : `matches your ${detectedMood} vibe`;
+    explanation = `Recommended because it ${firstReason.toLowerCase()} with a ${recommendationScore || 80}% match score.`;
+  }
+
+  // Store in cache
+  explanationCache.set(cacheKey, {
+    explanation,
+    timestamp: Date.now()
+  });
+
+  return {
+    explanation,
+    cached: false
+  };
+}
+
 module.exports = {
   generateCompletion,
   extractMusicPreferences,
   curatePlaylistFromCandidates,
   suggestSongMetadata,
+  explainSongRecommendation,
   DEFAULT_MODEL
 };

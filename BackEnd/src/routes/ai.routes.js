@@ -6,7 +6,8 @@ const {
   processMusicQuery,
   generateAIPlaylist,
   saveAIPlaylist,
-  suggestMetadata
+  suggestMetadata,
+  explainSong
 } = require('../controllers/ai.controller');
 
 // @route   POST /api/ai/test
@@ -28,5 +29,9 @@ router.post('/save-playlist', protect, saveAIPlaylist);
 // @route   POST /api/ai/suggest-metadata
 // @access  Protected (JWT Auth required)
 router.post('/suggest-metadata', protect, suggestMetadata);
+
+// @route   POST /api/ai/explain-song
+// @access  Optional Protect (Authenticated or Guest users)
+router.post('/explain-song', optionalProtect, explainSong);
 
 module.exports = router;
