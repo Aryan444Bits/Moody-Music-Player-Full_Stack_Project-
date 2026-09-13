@@ -6,6 +6,7 @@ import Suggestion from './components/Suggestion';
 import ListeningHistory from './components/ListeningHistory';
 import MoodHistory from './components/MoodHistory';
 import MoodJourney from './components/MoodJourney';
+import UserAnalytics from './components/UserAnalytics';
 import AIMusicAssistant from './components/AIMusicAssistant';
 import Login from './components/Login';
 import Register from './components/Register';
@@ -30,6 +31,7 @@ const Navigation = () => {
       <Link to="/upload">Upload Song</Link>
       {user ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginLeft: '1rem' }}>
+          <Link to="/analytics">📊 Analytics</Link>
           <Link to="/history">Listening History</Link>
           <Link to="/mood-history">Mood History</Link>
           <Link to="/mood-journey">Mood Journey</Link>
@@ -79,6 +81,14 @@ function AppContent() {
           element={
             <ProtectedRoute>
               <UploadSong />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/analytics"
+          element={
+            <ProtectedRoute>
+              <UserAnalytics />
             </ProtectedRoute>
           }
         />
