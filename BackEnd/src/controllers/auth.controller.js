@@ -20,7 +20,7 @@ const isValidEmail = (email) => {
 // @route   POST /api/auth/register
 const registerUser = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, role } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({
@@ -47,10 +47,13 @@ const registerUser = async (req, res) => {
       });
     }
 
+    const userRole = role === 'admin' ? 'admin' : 'user';
+
     const user = await User.create({
       name: name.trim(),
       email: email.toLowerCase().trim(),
-      password
+      password,
+      role: userRole
     });
 
     const token = generateToken(user._id, user.role);
@@ -92,6 +95,12 @@ const loginUser = async (req, res) => {
     if (!user) {
       return res.status(401).json({
         message: 'Invalid email or password'
+      });
+    }
+
+    if (user.isDisabled) {
+      return res.status(403).json({
+        message: 'Your account has been disabled by an administrator'
       });
     }
 

@@ -25,6 +25,12 @@ const protect = async (req, res, next) => {
         });
       }
 
+      if (req.user.isDisabled) {
+        return res.status(403).json({
+          message: 'Account disabled. Access forbidden.'
+        });
+      }
+
       return next();
     } catch (error) {
       console.error('JWT verification error:', error.message);

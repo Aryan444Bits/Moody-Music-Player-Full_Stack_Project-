@@ -7,10 +7,12 @@ import ListeningHistory from './components/ListeningHistory';
 import MoodHistory from './components/MoodHistory';
 import MoodJourney from './components/MoodJourney';
 import UserAnalytics from './components/UserAnalytics';
+import AdminDashboard from './components/AdminDashboard';
 import AIMusicAssistant from './components/AIMusicAssistant';
 import Login from './components/Login';
 import Register from './components/Register';
 import ProtectedRoute from './components/ProtectedRoute';
+import AdminRoute from './components/AdminRoute';
 import { AuthProvider, AuthContext } from './context/AuthContext';
 import './App.css';
 
@@ -31,12 +33,17 @@ const Navigation = () => {
       <Link to="/upload">Upload Song</Link>
       {user ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginLeft: '1rem' }}>
+          {user.role === 'admin' && (
+            <Link to="/admin" style={{ color: '#d8b4fe', fontWeight: 'bold' }}>
+              🛡️ Admin
+            </Link>
+          )}
           <Link to="/analytics">📊 Analytics</Link>
           <Link to="/history">Listening History</Link>
           <Link to="/mood-history">Mood History</Link>
           <Link to="/mood-journey">Mood Journey</Link>
           <span style={{ fontSize: '0.9rem', color: '#b26cff', fontWeight: 'bold' }}>
-            👤 {user.name}
+            👤 {user.name} {user.role === 'admin' && '(Admin)'}
           </span>
           <button
             onClick={handleLogout}
@@ -54,7 +61,7 @@ const Navigation = () => {
         </div>
       ) : (
         <>
-          <Link to="/login">Login</Link>
+          <Link to="/login" >Login</Link>
           <Link to="/register">Register</Link>
         </>
       )}
@@ -76,6 +83,14 @@ function AppContent() {
         <Route path="/ai-assistant" element={<AIMusicAssistant />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route
+          path="/admin"
+          element={
+            <AdminRoute>
+              <AdminDashboard />
+            </AdminRoute>
+          }
+        />
         <Route
           path="/upload"
           element={

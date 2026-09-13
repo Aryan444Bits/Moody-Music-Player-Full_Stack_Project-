@@ -8,6 +8,7 @@ const moodRoutes = require("./routes/mood.routes");
 const sessionRoutes = require("./routes/session.routes");
 const aiRoutes = require("./routes/ai.routes");
 const analyticsRoutes = require("./routes/analytics.routes");
+const adminRoutes = require("./routes/admin.routes");
 const cors = require("cors");
 
 const app = express();
@@ -30,6 +31,7 @@ app.use('/api/moods', moodRoutes);
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/admin', adminRoutes);
 app.use('/', songRoutes);
 
 module.exports = app;
